@@ -83,6 +83,18 @@
   @media (min-width: 560px) { .row-grid.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
   details { color: var(--muted); font-size: 14px; }
   details p { margin: 8px 0; }
+  .lists { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+  @media (min-width: 960px) { .lists { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  .row { border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 8px; margin-bottom: 10px; background: var(--field); }
+  .row input, .row select { background: var(--card); }
+  .row-top { display: flex; gap: 8px; align-items: center; justify-content: flex-end; }
+  .row-grid { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 560px) { .row-grid.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  .icon-box { display: flex; gap: 8px; align-items: center; }
+  .icon-box img { width: 24px; height: 24px; border-radius: 4px; border: 1px solid var(--line); background: #fff; }
+  .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+  .row label { margin: 0; }
+  .row label span { display: block; font-weight: 600; font-size: 13px; margin-bottom: 4px; }
   .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 </style>
 </head>
@@ -145,6 +157,30 @@
       
     </div>
   </div>
+
+
+  <div class="lists">
+    <section class="card" aria-labelledby="sal">
+      <div class="card-head"><h2 id="sal">Salony</h2><span>Lista z config.json</span></div>
+      <div id="salonsList"></div>
+      <div class="btns"><button type="button" class="ghost" id="addSalon">+ Dodaj salon</button></div>
+      <p class="hint">Link prowadzi do wizytówki salonu w Google Maps. Wklej pełny adres z Google Maps (np. z „Udostępnij”). Pusty link oznacza zwykłą nazwę.</p>
+    </section>
+
+    <section class="card" aria-labelledby="soc">
+      <div class="card-head"><h2 id="soc">Social media</h2><span>Lista z config.json</span></div>
+      <div id="socialsList"></div>
+      <div class="btns"><button type="button" class="ghost" id="addSocial">+ Dodaj social media</button></div>
+      <p class="hint">Ikonę wybierasz z listy (pliki z assets/) albo wpisujesz adres https własnej ikony.</p>
+    </section>
+  </div>
+
+  <section class="card" aria-labelledby="exp">
+    <div class="card-head"><h2 id="exp">Zapis zmian list</h2><span>Dla administratora</span></div>
+    <p class="hint" style="margin:0 0 12px">Zmiany w sekcjach Salony i Social media działają tylko w tej przeglądarce i znikają po odświeżeniu strony. Żeby zobaczyli je wszyscy, pobierz plik i wgraj go na serwer w miejsce <code>config.json</code>.</p>
+    <div class="btns" style="margin-top:0"><button type="button" id="downloadCfg">Pobierz config.json</button></div>
+    <div class="status" id="cfgStatus" role="status" aria-live="polite"></div>
+  </section>
 
 </div>
 
@@ -324,6 +360,118 @@ function renderPreview() {
   $('assetWarn').hidden = !!assetBase();
 }
 
+
+/* ---------- Edytory list (zmiany tylko w przeglądarce, eksport do config.json) ---------- */
+const ICON_LIBRARY = [
+  ['ico-facebook.png', 'Facebook'], ['ico-instagram.png', 'Instagram'], ['ico-linkedin.png', 'LinkedIn'],
+  ['ico-pinterest.png', 'Pinterest'], ['ico-youtube.png', 'YouTube']
+];
+function el(tag, attrs = {}, children = []) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'text') n.textContent = v;
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v);
+  }
+  children.forEach((c) => n.append(c));
+  return n;
+}
+const labelled = (text, input) => el('label', {}, [el('span', { text }), input]);
+function listInput(item, key, placeholder, opts = {}) {
+  const i = el('input', { value: item[key] || '', placeholder, autocomplete: 'off' });
+  i.addEventListener('input', () => {
+    const v = i.value.trim();
+    if (opts.https) i.setAttribute('aria-invalid', v && !isHttps(v) ? 'true' : 'false');
+    item[key] = v;
+    if (opts.slug) item.slug = slugify(v);
+    renderPreview();
+  });
+  return i;
+}
+function renumber(coll) { lists[coll].forEach((x, i) => (x.order = i + 1)); }
+function moveItem(coll, index, dir) {
+  const l = lists[coll], j = index + dir;
+  if (j < 0 || j >= l.length) return;
+  [l[index], l[j]] = [l[j], l[index]];
+  renumber(coll); renderLists(); renderPreview();
+}
+function removeItem(coll, index) {
+  lists[coll].splice(index, 1);
+  renumber(coll); renderLists(); renderPreview();
+}
+function rowButtons(coll, i, n) {
+  const b = (text, label, disabled, fn, cls) => el('button', { type: 'button', class: cls || 'ghost mini', text, 'aria-label': label, ...(disabled ? { disabled: '' } : {}), onclick: fn });
+  return el('div', { class: 'row-top' }, [
+    b('▲', 'Przesuń wyżej', i === 0, () => moveItem(coll, i, -1)),
+    b('▼', 'Przesuń niżej', i >= n - 1, () => moveItem(coll, i, 1)),
+    b('Usuń', 'Usuń', false, () => removeItem(coll, i), 'danger')
+  ]);
+}
+function salonRow(s, i, n) {
+  return el('div', { class: 'row' }, [
+    el('div', { class: 'row-grid' }, [
+      labelled('Nazwa', listInput(s, 'name', 'Nazwa salonu (np. Wrocław)', { slug: true })),
+      labelled('Link Google Maps', listInput(s, 'url', 'https://www.google.com/maps/...', { https: true }))
+    ]),
+    rowButtons('salons', i, n)
+  ]);
+}
+function socialRow(s, i, n) {
+  const isLib = ICON_LIBRARY.some(([k]) => k === s.icon);
+  const sel = el('select', {}, [
+    ...ICON_LIBRARY.map(([k, label]) => el('option', { value: k, text: label, ...(s.icon === k ? { selected: '' } : {}) })),
+    el('option', { value: '__custom', text: 'Własna ikona (adres https)', ...(!isLib && s.icon ? { selected: '' } : {}) })
+  ]);
+  const prev = el('img', { src: iconSrc(s.icon), alt: '', width: '24', height: '24' });
+  const iconUrl = el('input', { value: isLib ? '' : (s.icon || ''), placeholder: 'Adres ikony https (dla własnej ikony)', autocomplete: 'off' });
+  const setIcon = (v) => { s.icon = v; prev.src = iconSrc(v); renderPreview(); };
+  sel.addEventListener('change', () => { if (sel.value !== '__custom') { iconUrl.value = ''; setIcon(sel.value); } });
+  iconUrl.addEventListener('input', () => {
+    const v = iconUrl.value.trim();
+    iconUrl.setAttribute('aria-invalid', v && !isHttps(v) ? 'true' : 'false');
+    if (isHttps(v)) { sel.value = '__custom'; setIcon(v); }
+  });
+  return el('div', { class: 'row' }, [
+    el('div', { class: 'row-grid two' }, [
+      labelled('Nazwa', listInput(s, 'name', 'Nazwa (np. YouTube)', { slug: true })),
+      labelled('Link profilu', listInput(s, 'href', 'https://www.youtube.com/@...', { https: true }))
+    ]),
+    el('div', { class: 'row-grid two' }, [labelled('Ikona', sel), el('div', { class: 'icon-box' }, [prev, iconUrl])]),
+    rowButtons('socials', i, n)
+  ]);
+}
+function renderLists() {
+  const fill = (id, coll, rowFn, emptyText) => {
+    const host = $(id);
+    host.replaceChildren();
+    if (!lists[coll].length) host.append(el('p', { class: 'empty', text: emptyText }));
+    else lists[coll].forEach((x, i) => host.append(rowFn(x, i, lists[coll].length)));
+  };
+  fill('salonsList', 'salons', salonRow, 'Brak salonów. Dodaj pierwszy.');
+  fill('socialsList', 'socials', socialRow, 'Brak social mediów. Dodaj pierwsze.');
+}
+$('addSalon').addEventListener('click', () => {
+  lists.salons.push({ name: 'Nowy salon', slug: 'nowy-salon', url: '', order: lists.salons.length + 1 });
+  renderLists(); renderPreview();
+});
+$('addSocial').addEventListener('click', () => {
+  lists.socials.push({ name: 'Nowy profil', slug: 'nowy-profil', href: '', icon: 'ico-facebook.png', order: lists.socials.length + 1 });
+  renderLists(); renderPreview();
+});
+$('downloadCfg').addEventListener('click', () => {
+  const clean = (x, keys) => Object.fromEntries(keys.map((k) => [k, k === 'slug' ? (x.slug || slugify(x.name)) : (x[k] ?? '')]));
+  const cfg = {
+    salons: lists.salons.map((x, i) => ({ ...clean(x, ['name', 'slug', 'url']), order: i + 1 })),
+    socials: lists.socials.map((x, i) => ({ ...clean(x, ['name', 'slug', 'href', 'icon']), order: i + 1 }))
+  };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(cfg, null, 2) + '\n'], { type: 'application/json' }));
+  a.download = 'config.json';
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  const st = $('cfgStatus'); st.textContent = 'Pobrano config.json. Wgraj go na serwer w miejsce starego pliku.'; st.className = 'status ok';
+});
+
 /* ---------- Wczytanie config.json ---------- */
 const byOrder = (a, b) => (Number(a.order) || 0) - (Number(b.order) || 0);
 
@@ -342,6 +490,7 @@ async function loadConfig() {
     warn.textContent = 'Nie udało się wczytać config.json (listy salonów i social mediów). Stopka pokaże się bez nich. Zgłoś to administratorowi.';
     warn.hidden = false;
   }
+  renderLists();
   renderPreview();
 }
 
@@ -375,6 +524,7 @@ function setView(mode) {
 $('viewDesk').addEventListener('click', () => setView('desk'));
 $('viewPhone').addEventListener('click', () => setView('phone'));
 
+renderLists();
 renderPreview();
 loadConfig();
 </script>

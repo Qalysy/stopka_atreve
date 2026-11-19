@@ -21,6 +21,8 @@ Strona musi być otwierana przez `https://` lub serwer HTTP. Otwarcie pliku z dy
 
 Pracownicy nie edytują tego pliku. Po zmianie wgraj go na serwer i odśwież stronę (Ctrl+F5).
 
+Zamiast ręcznej edycji możesz użyć sekcji „Salony” i „Social media” na dole generatora (dodawanie, kolejność, linki, ikony). Zmiany działają tylko w Twojej przeglądarce, więc na końcu kliknij „Pobierz config.json” i wgraj ten plik na serwer w miejsce starego.
+
 - **Kolejność** wyświetlania to rosnące `order`.
 - **Nowy salon:** dopisz do `salons` obiekt `{ "name": "Poznań", "slug": "poznan", "url": "", "order": 6 }`. `slug` bez polskich znaków i spacji (trafia do UTM jako `salon-poznan`). Puste `url` oznacza zwykłą nazwę, `url` zaczynające się od `https://` (np. wizytówka Google Maps) robi z nazwy link.
 - **Nowy profil social:** dopisz do `socials` obiekt `{ "name": "YouTube", "slug": "youtube", "href": "https://www.youtube.com/@atreve", "icon": "ico-youtube.png", "order": 5 }`. Profil bez adresu `https` w `href` jest pomijany.
