@@ -3,31 +3,31 @@
     {
       "name": "Wrocław",
       "slug": "wroclaw",
-      "url": "https://www.google.com/search?q=ATREVE+Pracownia+Krzes%C5%82a+%7C+Showroom+-+Wroc%C5%82aw+-+Domar&hl=pl",
+      "url": "https://maps.app.goo.gl/fHhXXWbFuEiiQPSs7",
       "order": 1
     },
     {
       "name": "Bielany Wrocławskie",
       "slug": "bielany-wroclawskie",
-      "url": "https://www.google.com/search?q=ATREVE+Pracownia+Krzes%C5%82a+%7C+Showroom+Bielany+Wroc%C5%82awskie&hl=pl",
+      "url": "https://maps.app.goo.gl/83pxkJKihzk8Wuid6",
       "order": 2
     },
     {
       "name": "Warszawa",
       "slug": "warszawa",
-      "url": "https://www.google.com/search?q=ATREVE+Pracownia+Krzes%C5%82a+%7C+Showroom+Home+Concept+Warszawa&hl=pl",
+      "url": "https://maps.app.goo.gl/caETGmjxcdm2VGC26",
       "order": 3
     },
     {
       "name": "Katowice",
       "slug": "katowice",
-      "url": "https://www.google.com/search?q=ATREVE+Pracownia+Krzes%C5%82a+%7C+Katowice+-+Home+Concept&hl=pl",
+      "url": "https://maps.app.goo.gl/VDCB5c4CCrbRjbUm6",
       "order": 4
     },
     {
       "name": "Słupia",
       "slug": "slupia",
-      "url": "https://www.google.com/search?q=Showroom+firmowy+%7C+Atreve+Sp.+z+o.o.&hl=pl",
+      "url": "https://maps.app.goo.gl/ZadT75jvxPQXyNFu9",
       "order": 5
     }
   ],
