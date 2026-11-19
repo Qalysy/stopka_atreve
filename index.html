@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Generator stopki ATREVE</title>
+<style>
+  :root {
+    --bg: #f5f3f1;
+    --card: #ffffff;
+    --fg: #2f1c0d;
+    --muted: #7a6a5f;
+    --accent: #8c5a39;
+    --line: #e4dcd6;
+    --field: #f5f3f1;
+    --warn-bg: #fff4e5;
+    --warn-fg: #7a4a00;
+    --ok: #2e7d32;
+    --err: #b3261e;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1d1714; --card: #2a221e; --fg: #f3ece8; --muted: #b5a79e; --accent: #e0a57f;
+      --line: #3f342e; --field: #1d1714; --warn-bg: #3a2d12; --warn-fg: #ffd58a;
+      --ok: #7bd08a; --err: #ff9d94; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1d1714; --card: #2a221e; --fg: #f3ece8; --muted: #b5a79e; --accent: #e0a57f;
+    --line: #3f342e; --field: #1d1714; --warn-bg: #3a2d12; --warn-fg: #ffd58a;
+    --ok: #7bd08a; --err: #ff9d94; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-top: 24px;
+    padding-bottom: 40px;
+  }
+  .wrap { max-width: 1200px; margin: 0 auto; display: grid; gap: 20px; }
+  h1 { font-size: 22px; line-height: 1.25; margin: 0 0 4px; text-wrap: balance; }
+  h2 { font-size: 15px; margin: 0; }
+  .lead { color: var(--muted); margin: 0; }
+  .grid { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+  @media (min-width: 960px) { .grid { grid-template-columns: 360px minmax(0, 1fr); } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; min-width: 0; }
+  .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0 0 14px; }
+  .card-head span { font-size: 13px; color: var(--muted); }
+  label { display: block; font-weight: 600; font-size: 13px; margin: 14px 0 6px; }
+  label:first-of-type { margin-top: 0; }
+  label small { font-weight: 400; color: var(--muted); }
+  input, select {
+    width: 100%; font: inherit; padding: 10px 12px; border: 1px solid var(--line);
+    border-radius: 8px; background: var(--field); color: var(--fg); min-width: 0;
+  }
+  input[aria-invalid="true"] { border-color: var(--err); }
+  input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button {
+    font: inherit; font-weight: 600; padding: 9px 14px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--accent); background: var(--accent); color: var(--card);
+  }
+  button.ghost { background: transparent; color: var(--accent); }
+  button.danger { background: transparent; color: var(--err); border-color: var(--line); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .status { margin-top: 12px; font-size: 14px; min-height: 20px; }
+  .status.ok { color: var(--ok); }
+  .status.err { color: var(--err); }
+  .warn { background: var(--warn-bg); color: var(--warn-fg); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+  .hint { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+  .preview-wrap { background: #ffffff; color: #2f1c0d; border-radius: 8px; border: 1px dashed var(--line); }
+  #preview { width: 100%; }
+  .phone-toggle { display: flex; gap: 6px; }
+  .phone-toggle button[aria-pressed="true"] { background: var(--accent); color: var(--card); }
+  .phone-toggle button[aria-pressed="false"] { background: transparent; color: var(--accent); }
+  .phone-frame { width: 375px; max-width: 100%; margin: 0 auto; border: 10px solid #2b2b2b; border-radius: 28px; overflow: hidden; }
+  .mini { padding: 4px 10px; font-size: 13px; }
+  button:disabled { opacity: .4; }
+  @media (min-width: 560px) { .row-grid.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  details { color: var(--muted); font-size: 14px; }
+  details p { margin: 8px 0; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Generator stopki ATREVE</h1>
+    <p class="lead">Wpisz swoje dane, skopiuj stopkę i wklej ją w ustawieniach podpisu w Gmailu lub Outlooku.</p>
+  </header>
+
+  <div id="assetWarn" class="warn" hidden>
+    Adres grafik w pliku index.html (CONFIG.assetBase) jest pusty lub nie zaczyna się od https. Logo i ikony nie pojawią się w mailu. Zgłoś to administratorowi.
+  </div>
+  <div id="configWarn" class="warn" hidden></div>
+
+  <div class="grid">
+    <form class="card" id="form" novalidate>
+      <div class="card-head"><h2>Twoje dane</h2><span>* pola wymagane</span></div>
+
+      <label for="name">Imię i nazwisko *</label>
+      <input id="name" autocomplete="off" placeholder="Anna Kowalska">
+
+      <label for="position">Stanowisko *</label>
+      <input id="position" autocomplete="off" placeholder="Specjalista ds. marketingu">
+
+      <label for="phone">Telefon służbowy *</label>
+      <input id="phone" autocomplete="off" placeholder="+48 71 000 00 00">
+
+      <label for="mobile">Telefon komórkowy <small>(opcjonalnie)</small></label>
+      <input id="mobile" autocomplete="off" placeholder="+48 600 000 000">
+
+      <label for="email">E-mail *</label>
+      <input id="email" type="email" autocomplete="off" placeholder="imie.nazwisko@atreve.pl">
+
+      <label for="email2">Drugi e-mail <small>(opcjonalnie)</small></label>
+      <input id="email2" type="email" autocomplete="off" placeholder="imie.nazwisko@atreve.pl">
+
+      <label for="extra">Dodatkowa linia <small>(opcjonalnie)</small></label>
+      <input id="extra" autocomplete="off" placeholder="Dział: Marketing">
+
+      <div class="btns">
+        <button type="button" id="copyBtn">Kopiuj stopkę</button>
+      </div>
+      <div class="status" id="status" role="status" aria-live="polite"></div>
+
+      <details>
+        <summary>Jak wkleić</summary>
+        <p><b>Gmail:</b> Ustawienia → Zobacz wszystkie ustawienia → Ogólne → Podpis. Wklej w edytorze i zapisz.</p>
+        <p><b>Outlook:</b> Ustawienia → Poczta → Redagowanie i odpowiadanie → Podpis. Wklej i zapisz.</p>
+        <p>Po wklejeniu wyślij test do siebie i sprawdź, czy logo się wyświetla.</p>
+      </details>
+    </form>
+
+    <div style="display:grid;gap:20px;min-width:0;">
+      <section class="card" aria-labelledby="pv">
+        <div class="card-head"><h2 id="pv">Podgląd</h2><div class="phone-toggle" role="group" aria-label="Widok podglądu"><button type="button" class="mini" id="viewDesk" aria-pressed="true">Komputer</button><button type="button" class="mini" id="viewPhone" aria-pressed="false">Telefon</button></div></div>
+        <div class="preview-wrap"><div id="preview-box"><div id="preview"></div></div></div>
+      </section>
+
+      
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* Ustawienia stałe. Listy salonów i social mediów są w config.json (edytuje administrator). */
+const CONFIG = {
+  /* Adres katalogu z grafikami, musi zaczynać się od https i kończyć na /. */
+  assetBase: 'https://www.atreve.pl/stopka/assets/',
+  website: 'https://www.atreve.pl/',
+  emailDomain: 'atreve.pl',
+  utm: { source: 'email', medium: 'stopka', campaign: 'stopka_firmowa' },
+  salonsHeading: 'Odwiedź nasze salony:',
+  logo: 'logo.png',
+  watermark: 'watermark.png',
+  colors: { text: '#2f1c0d', accent: '#8c5a39', footerBg: '#faf6f5', link: '#2f1c0d', watermark: '#f0e2db' },
+  font: 'Arial,Helvetica,sans-serif'
+};
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* Stan list wczytany z config.json. */
+const lists = { salons: [], socials: [] };
+
+/* ---------- Pomocnicze ---------- */
+function slugify(s) {
+  return String(s ?? '').toLowerCase().replace(/ł/g, 'l')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'pracownik';
+}
+function isHttps(u) { return /^https:\/\/[^\s]+$/i.test(String(u || '').trim()); }
+
+function assetBase() {
+  let b = String(CONFIG.assetBase || '').trim();
+  if (!isHttps(b)) return '';
+  if (!b.endsWith('/')) b += '/';
+  return b;
+}
+/* Adres grafiki. Bez poprawnego assetBase podgląd używa katalogu assets/ obok strony
+   (w mailu taki adres nie zadziała, stąd ostrzeżenie). */
+function assetUrl(file) {
+  if (/^(data:|https:)/.test(file)) return file;
+  return (assetBase() || 'assets/') + file;
+}
+function iconSrc(icon) { return assetUrl(icon || 'ico-facebook.png'); }
+
+/* Dokleja UTM do adresu. term = element stopki, slug = pracownik. */
+function withUtm(url, term, slug) {
+  const u = new URL(url);
+  u.searchParams.set('utm_source', CONFIG.utm.source);
+  u.searchParams.set('utm_medium', CONFIG.utm.medium);
+  u.searchParams.set('utm_campaign', CONFIG.utm.campaign);
+  u.searchParams.set('utm_content', slug);
+  u.searchParams.set('utm_term', term);
+  return u.toString();
+}
+const salonTerm = (s) => 'salon-' + (s.slug || slugify(s.name));
+const socialTerm = (s) => 'social-' + (s.slug || slugify(s.name));
+
+/* Gotowe linki salonów i social mediów z poprawnym adresem https. */
+function activeSalons() { return lists.salons.filter((s) => s.name); }
+function activeSocials() { return lists.socials.filter((s) => s.name && isHttps(s.href)); }
+
+/* Lista wszystkich linków stopki (do podglądu). */
+function signatureLinks(d) {
+  const slug = slugify(d.name);
+  const out = [
+    { label: 'Logo', url: withUtm(CONFIG.website, 'logo', slug) },
+    { label: 'Strona www', url: withUtm(CONFIG.website, 'www', slug) }
+  ];
+  activeSocials().forEach((s) => out.push({ label: s.name, url: withUtm(s.href, socialTerm(s), slug) }));
+  activeSalons().forEach((s) => out.push({ label: 'Salon ' + s.name, url: withUtm(s.url, salonTerm(s), slug) }));
+  return out;
+}
+
+/* ---------- Szablon stopki (tabele + style inline) ---------- */
+function buildSignature(d) {
+  const c = CONFIG.colors;
+  const slug = slugify(d.name);
+  const base = `font-family:${CONFIG.font};color:${c.text};`;
+  const line = `${base}font-size:14px;line-height:20px;`;
+  const link = `color:${c.link};text-decoration:none;`;
+
+  const phoneLines = [];
+  if (d.phone) phoneLines.push(`<div style="${line}">tel. ${esc(d.phone)}</div>`);
+  if (d.mobile) phoneLines.push(`<div style="${line}">kom. ${esc(d.mobile)}</div>`);
+  const emailLine = d.email
+    ? `<div style="${line}overflow-wrap:anywhere;word-break:break-word;"><a href="mailto:${esc(d.email)}" style="${link}">${esc(d.email)}</a></div>` : '';
+  const extraLine = d.extra ? `<div style="${line}color:${c.accent};">${esc(d.extra)}</div>` : '';
+  const email2Line = d.email2
+    ? `<div style="${line}overflow-wrap:anywhere;word-break:break-word;"><a href="mailto:${esc(d.email2)}" style="${link}">${esc(d.email2)}</a></div>` : '';
+
+  const socials = activeSocials();
+  const socialCells = socials.map((s) =>
+    `<td style="padding:0 8px 0 0;"><a href="${esc(withUtm(s.href, socialTerm(s), slug))}" style="text-decoration:none;"><img src="${esc(iconSrc(s.icon))}" width="18" height="18" alt="${esc(s.name)}" style="display:block;border:0;width:18px;height:18px;"></a></td>`
+  ).join('');
+
+  const salons = activeSalons();
+  const salonsHtml = salons.map((s) => isHttps(s.url)
+    ? `<a href="${esc(withUtm(s.url, salonTerm(s), slug))}" style="${line}color:${c.accent};text-decoration:none;">${esc(s.name)}</a>`
+    : `<span style="${line}color:${c.accent};">${esc(s.name)}</span>`
+  ).join(`<span style="${line}color:${c.accent};"> · </span>`);
+
+  const siteHref = withUtm(CONFIG.website, 'logo', slug);
+  const wwwHref = withUtm(CONFIG.website, 'www', slug);
+
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;max-width:600px;border-collapse:collapse;${base}">
+  <tr>
+    <td valign="top" style="padding:20px 20px 18px 20px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td valign="top" width="110" style="width:110px;padding:0 16px 0 0;">
+            <a href="${esc(siteHref)}" style="text-decoration:none;"><img src="${esc(assetUrl(CONFIG.logo))}" width="96" height="96" alt="ATREVE" style="display:block;border:0;width:96px;height:96px;"></a>
+          </td>
+          <td valign="top" style="padding:2px 0 0 0;">
+            <div style="${base}font-size:15px;line-height:20px;font-weight:bold;">${esc(d.name)}</div>
+            <div style="${line}">${esc(d.position)}</div>
+            <div style="height:18px;line-height:18px;font-size:18px;">&nbsp;</div>
+            ${phoneLines.join('\n            ')}
+            ${emailLine}
+            ${email2Line}
+            ${extraLine}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td bgcolor="${c.footerBg}" style="background-color:${c.footerBg};padding:18px 20px 0 20px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td valign="top" width="1%" style="width:1%;white-space:nowrap;padding:0 16px 0 0;">
+            <div style="${base}font-size:14px;line-height:20px;font-weight:bold;"><a href="${esc(wwwHref)}" style="${link}">${esc(CONFIG.website.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a></div>
+            ${socials.length ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:8px;border-collapse:collapse;"><tr>${socialCells}</tr></table>` : ''}
+          </td>
+          <td valign="top" style="padding:0;">
+            ${salons.length ? `<div style="${base}font-size:14px;line-height:20px;font-weight:bold;color:${c.accent};">${esc(CONFIG.salonsHeading)}</div>
+            <div style="height:6px;line-height:6px;font-size:6px;">&nbsp;</div>
+            <div style="${line}">${salonsHtml}</div>` : ''}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td bgcolor="${c.footerBg}" height="104" style="background-color:${c.footerBg};height:104px;padding:0;line-height:0;font-size:0;">
+      <img src="${esc(assetUrl(CONFIG.watermark))}" width="600" height="104" alt="ATREVE" style="display:block;border:0;width:100%;height:auto;">
+    </td>
+  </tr>
+</table>`;
+}
+
+/* ---------- Formularz osobisty ---------- */
+function readData() {
+  const d = {};
+  ['name', 'position', 'phone', 'mobile', 'email', 'email2', 'extra'].forEach((f) => (d[f] = $(f).value.trim()));
+  ['email', 'email2'].forEach((f) => { if (d[f] && !d[f].includes('@')) d[f] += '@' + CONFIG.emailDomain; });
+  return d;
+}
+function validate(d) {
+  let ok = true;
+  ['name', 'position', 'phone', 'email'].forEach((f) => {
+    const bad = !d[f];
+    $(f).setAttribute('aria-invalid', bad ? 'true' : 'false');
+    if (bad) ok = false;
+  });
+  return ok;
+}
+function setStatus(msg, kind) {
+  const el = $('status');
+  el.textContent = msg;
+  el.className = 'status ' + (kind || '');
+}
+function renderPreview() {
+  const d = readData();
+  $('preview').innerHTML = buildSignature(d);
+  $('assetWarn').hidden = !!assetBase();
+}
+
+/* ---------- Wczytanie config.json ---------- */
+const byOrder = (a, b) => (Number(a.order) || 0) - (Number(b.order) || 0);
+
+async function loadConfig() {
+  const warn = $('configWarn');
+  try {
+    const res = await fetch('config.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const cfg = await res.json();
+    lists.salons = (Array.isArray(cfg.salons) ? cfg.salons : []).slice().sort(byOrder);
+    lists.socials = (Array.isArray(cfg.socials) ? cfg.socials : []).slice().sort(byOrder);
+    warn.hidden = true;
+  } catch (e) {
+    lists.salons = [];
+    lists.socials = [];
+    warn.textContent = 'Nie udało się wczytać config.json (listy salonów i social mediów). Stopka pokaże się bez nich. Zgłoś to administratorowi.';
+    warn.hidden = false;
+  }
+  renderPreview();
+}
+
+/* ---------- Formularz i kopiowanie ---------- */
+['name', 'position', 'phone', 'mobile', 'email', 'email2', 'extra'].forEach((f) =>
+  $(f).addEventListener('input', renderPreview)
+);
+$('copyBtn').addEventListener('click', () => {
+  const d = readData();
+  if (!validate(d)) return setStatus('Uzupełnij pola oznaczone *.', 'err');
+  renderPreview();
+  if (!assetBase()) setStatus('Brak poprawnego adresu grafik w index.html. Stopka zostanie skopiowana, ale logo i ikony nie pojawią się w mailu.', 'err');
+  const range = document.createRange();
+  range.selectNodeContents($('preview'));
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  let copied = false;
+  try { copied = document.execCommand('copy'); } catch (e) { copied = false; }
+  sel.removeAllRanges();
+  if (copied) { if (assetBase()) setStatus('Skopiowano. Wklej w ustawieniach podpisu.', 'ok'); }
+  else setStatus('Nie udało się skopiować automatycznie. Zaznacz podgląd ręcznie i skopiuj (Ctrl+C / Cmd+C).', 'err');
+});
+
+function setView(mode) {
+  const phone = mode === 'phone';
+  $('preview-box').classList.toggle('phone-frame', phone);
+  $('viewDesk').setAttribute('aria-pressed', String(!phone));
+  $('viewPhone').setAttribute('aria-pressed', String(phone));
+}
+$('viewDesk').addEventListener('click', () => setView('desk'));
+$('viewPhone').addEventListener('click', () => setView('phone'));
+
+renderPreview();
+loadConfig();
+</script>
+</body>
+</html>

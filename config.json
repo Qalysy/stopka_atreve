@@ -1,0 +1,15 @@
+{
+  "salons": [
+    { "name": "Wrocław", "slug": "wroclaw", "url": "", "order": 1 },
+    { "name": "Bielany Wrocławskie", "slug": "bielany-wroclawskie", "url": "", "order": 2 },
+    { "name": "Warszawa", "slug": "warszawa", "url": "", "order": 3 },
+    { "name": "Katowice", "slug": "katowice", "url": "", "order": 4 },
+    { "name": "Słupia", "slug": "slupia", "url": "", "order": 5 }
+  ],
+  "socials": [
+    { "name": "Facebook", "slug": "facebook", "href": "https://www.facebook.com/atreve", "icon": "ico-facebook.png", "order": 1 },
+    { "name": "Instagram", "slug": "instagram", "href": "https://www.instagram.com/atreve", "icon": "ico-instagram.png", "order": 2 },
+    { "name": "LinkedIn", "slug": "linkedin", "href": "https://www.linkedin.com/company/atreve", "icon": "ico-linkedin.png", "order": 3 },
+    { "name": "Pinterest", "slug": "pinterest", "href": "https://www.pinterest.com/atreve", "icon": "ico-pinterest.png", "order": 4 }
+  ]
+}
